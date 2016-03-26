@@ -1,0 +1,104 @@
+<html>
+<head>
+  <title>EZ-B v4 Robot Controller</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+<body>
+  <h2>
+    EZ-B Wi-Fi Access Point Mode Configuration
+  </h2>
+  <br>
+  <form action="/save.cgi" method="get">
+    <table>
+      <tr>
+        <td width="140px">
+          SSID
+        </td>
+        <td>
+          <input type="text" name="20" size="32" id="20">
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2">
+          &nbsp;
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Channel
+        </td>
+        <td>
+          <input type="text" name="21" size="2" id="21">
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2">
+          &nbsp;
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Security Mode
+        </td>
+        <td>
+          <select name="24" id="24">
+            <option value="0">Open</option>
+            <option value="1">WPA</option>
+            <option value="2">WPA2</option>
+            <option value="3">WEP</option>
+          </select>
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2">
+          &nbsp;
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Security Key
+        </td>
+        <td>
+          <input type="text" name="22" size="20" id="22"><br />
+          (Must be 8 characters or longer. If you enter less than 8 characters, the EZ-B will flash red and require a reset)
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2">
+          &nbsp;
+        </td>
+      </tr>
+      <tr>
+        <td width="110px">
+          802.11 N-mode
+        </td>
+        <td width="35px" align="left">
+          <input type="checkbox" name="23" id="23">
+        </td>
+      </tr>
+      <tr>
+        <td height="20"></td>
+      </tr>
+      <tr>
+        <td colspan="2">
+          &nbsp;
+        </td>
+      </tr>
+      <tr>
+        <td></td>
+        <td>
+          <input type="submit" name="Save" value="Save" class="btn_body" onclick="window.alert('Cycle the power on the EZ-B to activate changes')">
+        </td>
+      </tr>
+    </table>
+  </form>
+  <br />
+  <br />
+  <div style="border: 1px solid #909090; background: #fefefe; margin: 10px; padding: 5px;">
+    <div style="font-weight: bold; padding-bottom: 5px;">Help</div>
+    The EZ-B v4 accepts Wi-Fi connections from other devices when it is configured as an Access Point.<br />
+    <br />
+    For example, you would configure the EZ-B v4 to operate in Access Point mode to connect directly to it from another device (<i>i.e. Computer, iPad, iPhone, Android Device, etc.</i>). When you connect a device to the EZ-B v4 in Access Point mode, you will no longer have access to the internet. In order to have access to the internet from your device while connected to the EZ-B v4 in Acess Point Mode, you will require two Wi-Fi adapters on your device.
+  </div>
+</body>
+</html>

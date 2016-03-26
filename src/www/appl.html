@@ -1,0 +1,100 @@
+<html>
+<head>
+  <title>EZ-B v4 Robot Controller</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+<body>
+  <h2>
+    Custom Parameters
+  </h2>
+  <br />
+  <br />
+  
+  <form action="/app.cgi" method="get">
+    <table>
+      <tr>
+        <td>
+          Retry Attempts:
+        </td>
+        <td>
+           <input type="text" name="11" id="11" size="2">
+        </td>
+      </tr>
+	  <tr>
+        <td>
+          Retry Interval ms<br/>ex: 10000 = 10 seconds:
+        </td>
+        <td>
+          <input type="text" name="12" id="12" size="6">
+        </td>
+      </tr>
+	  <tr>
+        <td>
+          Jekyll & Hyde Flags:
+        </td>
+        <td>
+          <input type="text" name="13" id="13" size="6">
+        </td>
+      </tr>
+    </table>
+    <br />
+    <input type="submit" name="Action" value="Save" class="btn_body" onclick="window.alert('Cycle power to initialize new settings.')">
+  </form>
+
+  <br />
+  <br />
+  <br />
+  <br />
+
+  <h2>
+    Power On Settings
+  </h2>
+  <br />
+  <br />
+  <form action="/app.cgi" method="get">
+    <table>
+      <tr>
+        <td align="right">
+          Low Battery Warning:
+        </td>
+        <td>
+          <select name="10" id="10">
+            <option value="0" selected>ENABLED</option>
+            <option value="1">DISABLED</option>
+          </select>
+        </td>
+      </tr>
+    </table>
+    <br />
+    <input type="submit" name="Action" value="Save" class="btn_body" onclick="window.alert('Cycle power to initialize new settings.')">
+  </form>
+
+  <br />
+  <br />
+  <br />
+  <br />
+
+  <h2>
+    Diagnostics
+  </h2>
+  <br />
+  <form action="/button.cgi" method="get">
+    <input type="submit" name="0" value="Sound 1" class="btn_body">
+    <input type="submit" name="1" value="Sound 2" class="btn_body">
+    <input type="submit" name="2" value="Sound 3" class="btn_body">
+    <input type="submit" name="4" value="Sound 4" class="btn_body">
+    <input type="submit" name="5" value="Sound 5" class="btn_body">
+    <input type="submit" name="6" value="Sound 6" class="btn_body">
+    <input type="submit" name="7" value="Sound 7" class="btn_body">
+    <input type="submit" name="8" value="Sound 8" class="btn_body">
+    <br />
+    <br />
+    <input type="submit" name="10" value="All Ports Servos 90 Degrees" class="btn_body" style="width: 200px;">
+    <input type="submit" name="11" value="Alternating Digital I/O #1" class="btn_body" style="width: 200px;">
+    <input type="submit" name="12" value="Alternating Digital I/O #2" class="btn_body" style="width: 200px;">
+    <br />
+    <br />
+    <input type="submit" name="99" value="Reboot EZ-B" class="btn_body" onclick="return confirm('Are you sure?');">
+  </form>
+</body>
+</html>

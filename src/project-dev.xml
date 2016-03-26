@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<project>
+
+  <hardware in="hardware.xml" />
+  <binary in="wifi_http_serv.juo" />
+  <image out="WF121-Dev.dfu" out_hex="WF121-Dev.hex"/>
+
+  <scripting>
+    <script in="httpd-dev.bgs" api="wifiapi.xml" />
+  </scripting>
+
+  <files>
+    <file path="www\404.html"/>
+    <file path="www\main.html"/>
+    <file path="www\ap.html"/>
+    <file path="www\appl.html"/>
+    <file path="www\client.html"/>
+    <file path="www\index.html"/>
+    <file path="www\logo.gif"/>
+    <file path="www\style.css"/>
+  </files>
+
+</project>
+
+

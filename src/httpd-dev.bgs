@@ -1,0 +1,635 @@
+const _STATUS_PIN_3     = $0080              # Pin used for STA status notifications (E7)
+const _STATUS_PIN_2     = $0040              # Pin used for STA status notifications (E6)
+const _STATUS_PIN_1     = $0020              # Pin used for AP status notifications (E5)
+const _STATUS_PIN_INDEX = 4                  # Port index for PIN_STA and PIN_AP LED's (Bank E)
+
+const _LED_FLASH_STEADY = 0
+const _LED_FLASH_50     = 50
+const _LED_FLASH_100    = 100
+const _LED_FLASH_250    = 250
+const _LED_FLASH_500    = 500
+const _LED_FLASH_1000   = 1000
+const _LED_FLASH_2000   = 2000
+
+const FLASH_PS_KEY_LOW_BATTERY_WARNING = 10
+
+const FLASH_PS_KEY_RETRY_ATTEMPTS      = 11
+const FLASH_PS_KEY_RETRY_INTERVAL      = 12
+const FLASH_PS_KEY_HYDE 		       = 13
+const RETRY_TIMER_ID				   = 2
+
+const _OPERATING_MODE_AP = 2
+const _OPERATING_MODE_ST = 1
+
+dim LedRed  
+dim LedGreen
+dim LedBlue  
+
+dim LedStatusPinState
+dim LedFlashMode
+dim DelayBoot
+dim OperatingMode
+
+dim EndPointCmdId
+dim EndPointCameraId
+
+dim _DEFAULT_AP_SSID_LEN
+dim _DEFAULT_AP_SSID_VALUE(32)
+
+dim Result                   # PS load command result code
+dim TmpLen                   # PS load command value length
+dim TmpData(64)              # PS load command value data
+
+dim APChannel
+dim APSecurity
+dim APSsid(32)                    
+dim APSsidLen
+
+dim RetryCounter
+dim RetryInterval
+dim RetryAttemps
+
+###########################################################################################################################################
+event system_boot(major, minor, patch, build, bootloader_version, tcpip_version, hw)
+
+  LedStatusPinState                              = 0
+  DelayBoot                                      = 0
+  OperatingMode                                  = _OPERATING_MODE_AP
+  _DEFAULT_AP_SSID_LEN                           = 12
+  _DEFAULT_AP_SSID_VALUE(0:_DEFAULT_AP_SSID_LEN) = "EZ-B v4 0841"
+  EndPointCameraId                               = -1
+  EndPointCmdId                                  = -1
+
+  # Send data from EZ-B Cmd to null until a client is connected
+  call endpoint_set_streaming_destination(0, -1)
+  
+  # Send data from EZ-B Camera to null until a client is connected
+  call endpoint_set_streaming_destination(1, -1)
+        
+  call flash_ps_load(FLASH_PS_KEY_MODULE_SERVICE)(Result, TmpLen, TmpData(0:TmpLen))  
+  if Result = 0 && TmpLen > 0
+    OperatingMode = TmpData(0:TmpLen)
+  end if
+
+  call system_set_max_power_saving_state(0)
+
+  call hardware_io_port_config_direction(_STATUS_PIN_INDEX, _STATUS_PIN_1, $0000)
+  call hardware_io_port_config_direction(_STATUS_PIN_INDEX, _STATUS_PIN_2, $0000)
+  call hardware_io_port_config_direction(_STATUS_PIN_INDEX, _STATUS_PIN_3, $0000)
+
+  LedFlashMode = _LED_FLASH_100
+  LedRed       = 1
+  LedGreen     = 1
+  LedBlue      = 1
+    
+  call hardware_set_soft_timer(LedFlashMode, 1, 1)
+  
+  call sme_set_operating_mode(OperatingMode)
+          
+  call config_set_mac(0, "\x00\x07\x80\x01\x08\x41")(Result, TmpLen)
+    
+  call flash_ps_load(FLASH_PS_KEY_RETRY_INTERVAL)(Result, TmpLen, TmpData(0:TmpLen))  
+  if TmpData(0:TmpLen) >0
+	RetryInterval = TmpData(0:TmpLen)
+    
+	call flash_ps_load(FLASH_PS_KEY_RETRY_ATTEMPTS)(Result, TmpLen, TmpData(0:TmpLen)) 
+	RetryAttemps = TmpData(0:TmpLen)
+	RetryCounter = RetryAttemps
+	call hardware_set_soft_timer(RetryInterval, 2, 1)
+  end if
+
+  call sme_wifi_on()
+  
+end
+
+
+###########################################################################################################################################
+event hardware_soft_timer(handle)
+  if handle = RETRY_TIMER_ID
+	
+	# Read STA SSID from PS and initiate a connection attempt.
+	call flash_ps_load(FLASH_PS_KEY_CLIENT_SSID)(Result, TmpLen, TmpData(0:TmpLen))  
+	if Result = 0 && TmpLen > 0
+		RetryCounter = RetryCounter - 1
+
+		call endpoint_send(0, 3, "\x05\x02\x64")    
+		
+		call sme_connect_ssid(TmpLen, TmpData(0:TmpLen))
+	end if
+	
+  else  
+	  if LedFlashMode = _LED_FLASH_STEADY
+
+		LedStatusPinState = 1
+
+		  if (LedRed = 1)    
+			call hardware_io_port_write(_STATUS_PIN_INDEX, _STATUS_PIN_1, $0000)
+		  else
+			call hardware_io_port_write(_STATUS_PIN_INDEX, _STATUS_PIN_1, _STATUS_PIN_1)
+		  end if
+		  
+		  if (LedGreen = 1)      
+			call hardware_io_port_write(_STATUS_PIN_INDEX, _STATUS_PIN_2, $0000)
+		  else
+			call hardware_io_port_write(_STATUS_PIN_INDEX, _STATUS_PIN_2, _STATUS_PIN_2)
+		  end if
+		  
+		  if (LedBlue = 1)      
+			call hardware_io_port_write(_STATUS_PIN_INDEX, _STATUS_PIN_3, $0000)
+		  else
+			call hardware_io_port_write(_STATUS_PIN_INDEX, _STATUS_PIN_3, _STATUS_PIN_3)
+		  end if
+	  
+	  else 
+	  
+		LedStatusPinState = LedStatusPinState ^ 1
+
+		if LedStatusPinState = 0    
+
+		  call hardware_io_port_write(_STATUS_PIN_INDEX, _STATUS_PIN_1, _STATUS_PIN_1)
+
+		  call hardware_io_port_write(_STATUS_PIN_INDEX, _STATUS_PIN_2, _STATUS_PIN_2)
+
+		  call hardware_io_port_write(_STATUS_PIN_INDEX, _STATUS_PIN_3, _STATUS_PIN_3)
+		  
+		else
+
+		  if (LedRed = 1)    
+			call hardware_io_port_write(_STATUS_PIN_INDEX, _STATUS_PIN_1, $0000)
+		  end if
+		  
+		  if (LedGreen = 1)      
+			call hardware_io_port_write(_STATUS_PIN_INDEX, _STATUS_PIN_2, $0000)
+		  end if
+		  
+		  if (LedBlue = 1)      
+			call hardware_io_port_write(_STATUS_PIN_INDEX, _STATUS_PIN_3, $0000)
+		  end if
+		  
+		end if
+		
+	  end if
+
+	  if LedFlashMode = _LED_FLASH_STEADY
+	  
+		call hardware_set_soft_timer(1000, 1, 1)	
+
+	  else 
+
+		call hardware_set_soft_timer(LedFlashMode, 1, 1)	
+		
+	  end if
+  end if
+end
+
+
+###########################################################################################################################################
+procedure StartModeST() 
+
+  call tcpip_configure($00000000, $00000000, $00000000, 1)
+
+  call flash_ps_load(FLASH_PS_KEY_CLIENT_PW)(Result, TmpLen, TmpData(0:TmpLen))  
+  if Result = 0 
+  
+    call sme_set_password(TmpLen, TmpData(0:TmpLen))
+    
+  end if
+
+  call flash_ps_load(FLASH_PS_KEY_CLIENT_SSID)(Result, TmpLen, TmpData(0:TmpLen))  
+  if Result = 0          
+  
+    call sme_connect_ssid(TmpLen, TmpData(0:TmpLen))
+   
+  end if
+
+end
+
+
+###########################################################################################################################################
+procedure StartModeAP() 
+
+  # Set the default ip address to 192.168.1.1, 24 bit netmask, gw is itself
+  call tcpip_configure(192.168.1.1, 255.255.255.0, 192.168.1.1, 0)
+
+  # Get the channel. If there is no channel, use the default
+  call flash_ps_load(FLASH_PS_KEY_AP_CHANNEL)(Result, TmpLen, TmpData(0:TmpLen))  
+  if Result = 0 && TmpLen > 0
+
+    APChannel = TmpData(0:TmpLen)    
+
+  else
+
+    APChannel = 1  
+
+  end if
+  
+  # Get the security mode. If not set, use default open security
+  call flash_ps_load(FLASH_PS_KEY_AP_SECURITY)(Result, TmpLen, TmpData(0:TmpLen))  
+  if Result = 0 && TmpLen > 0
+    
+    APSecurity = TmpData(0:TmpLen)
+  
+  else  
+    
+    APSecurity = 0  
+  
+  end if
+ 
+   # Check for default SSID. If there is not one, set to default ssid
+  call flash_ps_load(FLASH_PS_KEY_AP_SSID)(Result, APSsidLen, APSsid(0:APSsidLen))  
+  if Result != 0 && APSsidLen = 0
+  
+    APSsidLen = _DEFAULT_AP_SSID_LEN    
+    
+    memcpy(APSsid(0), _DEFAULT_AP_SSID_VALUE(0), _DEFAULT_AP_SSID_LEN)  
+    
+  end if
+
+  # Check for a security password if the security is set. If not set, use a blank password with open security.
+  call flash_ps_load(FLASH_PS_KEY_AP_PW)(Result, TmpLen, TmpData(0:TmpLen))  
+  if Result = 0 && APSecurity > 0  
+
+    call sme_set_ap_password(TmpLen, TmpData(0:TmpLen))    
+    
+  else
+      
+    call sme_set_ap_password(0, "")  
+  
+  end if
+     
+  call sme_start_ap_mode(APChannel, APSecurity, APSsidLen, APSsid(0:APSsidLen))
+
+end
+
+
+###########################################################################################################################################
+event sme_wifi_is_on(state)
+
+  LedFlashMode = _LED_FLASH_50
+  LedRed       = 0
+  LedGreen     = 1
+  LedBlue      = 0
+  
+  if OperatingMode = _OPERATING_MODE_ST
+  
+    call StartModeST()
+
+    # Start the HTTP Server (no dhcp)
+    call https_enable(1, 0, 0)
+    
+  else
+
+    call StartModeAP()
+
+    # Start the HTTP & DHCP Server
+    call https_enable(1, 1, 0)
+	
+  end if
+    
+  # Start the EZ-B CMD Server
+  call tcpip_start_tcp_server(23, 0) 
+
+    # Start the EZ-B Camera Server
+  call tcpip_start_tcp_server(24, 1)  
+	
+  # Startup Sound on EZ-B through Cmd
+  call endpoint_send(0, 3, "\x05\x00\x70")      
+
+  # Welcome Sound on EZ-B through Cmd
+  call endpoint_send(0, 3, "\x05\x03\x64")      
+    
+  call flash_ps_load(FLASH_PS_KEY_LOW_BATTERY_WARNING)(Result, TmpLen, TmpData(0:TmpLen))  
+  if TmpData(0:TmpLen) = 0
+
+    # Enable Battery Monitor
+    call endpoint_send(0, 3, "\x04\x00\x01")      
+
+  else
+
+    # Disable Battery Monitor
+    call endpoint_send(0, 3, "\x04\x00\x00")      
+  
+  end if
+    
+end
+
+
+###########################################################################################################################################
+event sme_wifi_is_off(state)
+  
+  call sme_wifi_on()
+  
+end
+
+
+###########################################################################################################################################
+event sme_ap_mode_started(hw_interface)
+  
+  LedFlashMode = _LED_FLASH_1000
+
+  LedRed       = 0
+  LedGreen     = 0
+  LedBlue      = 1
+  
+end
+
+
+###########################################################################################################################################
+event sme_ap_mode_failed(reason, hw_interface)
+  
+  LedFlashMode = _LED_FLASH_100
+
+  LedRed       = 1
+  LedGreen     = 0
+  LedBlue      = 0
+ 
+end
+
+
+###########################################################################################################################################
+event sme_connected(status, hw_interface, bssid)
+
+  LedFlashMode = _LED_FLASH_1000
+ 
+  LedRed       = 0
+  LedGreen     = 1
+  LedBlue      = 0
+
+  # Connection Success Sound on EZ-B through Cmd
+  call endpoint_send(0, 3, "\x05\x04\x64")      
+  
+  RetryCounter = RetryAttemps
+end
+
+
+###########################################################################################################################################
+event sme_connect_failed(reason, hw_interface)
+
+  LedFlashMode = _LED_FLASH_250
+
+  LedRed       = 1
+  LedGreen     = 0
+  LedBlue      = 0
+
+  # Connection Failure Sound on EZ-B through Cmd
+  call endpoint_send(0, 3, "\x05\x05\x64")      
+
+  if RetryCounter>0
+    call hardware_set_soft_timer(RetryInterval, RETRY_TIMER_ID, 1)
+  end if
+  
+end
+
+
+###########################################################################################################################################
+event sme_disconnected(reason, hw_interface)
+
+  LedFlashMode = _LED_FLASH_500
+
+  LedRed       = 1
+  LedGreen     = 0
+  LedBlue      = 1
+
+  # Connection Failure Sound on EZ-B through Cmd
+  call endpoint_send(0, 3, "\x05\x05\x64")      
+
+  # Read STA SSID from PS and initiate a connection attempt.
+  call flash_ps_load(FLASH_PS_KEY_CLIENT_SSID)(Result, TmpLen, TmpData(0:TmpLen))  
+  if Result = 0 && TmpLen > 0
+  
+	RetryCounter = RetryAttemps
+    call sme_connect_ssid(TmpLen, TmpData(0:TmpLen))
+  end if
+    
+end
+
+
+###########################################################################################################################################
+event https_on_req(service)
+
+  call system_reset(0)
+  
+end
+
+
+###########################################################################################################################################
+event tcpip_endpoint_status(endpoint, local_ip, local_port, remote_ip, remote_port)
+  
+  # Received TCP Client for EZ-B CMD. Setup stream route and LED Steady
+  if local_port = 23 && remote_ip != $00000000
+            
+    EndPointCmdId = endpoint
+    
+    call endpoint_set_streaming_destination(0, endpoint)  
+
+    LedFlashMode = _LED_FLASH_STEADY
+    
+    if OperatingMode = _OPERATING_MODE_ST
+
+      LedGreen      = 1  
+      LedBlue       = 0
+      LedRed        = 0
+      
+    else 
+    
+      LedGreen      = 0
+      LedBlue       = 1
+      LedRed        = 0
+    
+    end if
+
+    # Stop audio dma Sound on EZ-B through Cmd
+    call endpoint_send(0, 2, "\xfe\x00")      
+
+    # Connected beep
+    call endpoint_send(0, 3, "\x05\x02\x34")
+      
+  end if
+  
+  # Received TCP Client for EZ-B Camera. Setup stream route.
+  if local_port = 24 && remote_ip != $00000000
+    
+      EndPointCameraId = endpoint
+      
+      call endpoint_set_streaming_destination(1, endpoint)
+                  
+  end if
+    
+end
+
+
+###########################################################################################################################################
+event endpoint_closing(reason, endpoint)
+
+  # Received disconnect from EZ-B Cmd. Stream to null and flash status LED
+  if endpoint = EndPointCmdId
+  
+    call endpoint_set_streaming_destination(0, -1)
+
+    LedFlashMode  = _LED_FLASH_1000
+    
+    if OperatingMode = _OPERATING_MODE_ST
+
+      LedGreen      = 1  
+      LedBlue       = 0
+      LedRed        = 0
+      
+    else 
+    
+      LedGreen      = 0
+      LedBlue       = 1
+      LedRed        = 0
+    
+    end if
+    
+    EndPointCmdId = -1
+
+    # Stop audio dma Sound on EZ-B through Cmd
+    call endpoint_send(0, 2, "\xfe\x00")      
+    
+    # Close Sound on EZ-B through Cmd
+    call endpoint_send(0, 3, "\x05\x01\x34")      
+    
+  end if
+  
+  # Received disconnect from EZ-B Camera. Stream to null.
+  if endpoint = EndPointCameraId
+  
+    call endpoint_set_streaming_destination(1, -1)
+    
+    EndPointCameraId = -1
+
+  end if
+
+  call endpoint_close(endpoint)
+  
+end
+
+
+###########################################################################################################################################
+event hardware_external_interrupt(irq, timestamp)
+
+    # Reset button pressed. Restore defaults.
+    if irq = 0 then
+
+        # Reset To Defaults
+        call endpoint_send(0, 3, "\x04\x13")      
+
+        # Reset Sound on EZ-B through Cmd
+        call endpoint_send(0, 3, "\x05\x06\x64")      
+    
+        call flash_ps_save(FLASH_PS_KEY_MODULE_SERVICE, 4, _OPERATING_MODE_AP)
+
+        call flash_ps_save(FLASH_PS_KEY_AP_SSID, _DEFAULT_AP_SSID_LEN, _DEFAULT_AP_SSID_VALUE(0:_DEFAULT_AP_SSID_LEN))
+
+        call flash_ps_save(FLASH_PS_KEY_AP_CHANNEL, 4, 1)
+        
+        call flash_ps_save(FLASH_PS_KEY_AP_WIFI_N, 4, 0)
+        
+        call flash_ps_save(FLASH_PS_KEY_AP_SECURITY, 4, 0)
+
+        call flash_ps_save(FLASH_PS_KEY_LOW_BATTERY_WARNING, 4, 0)
+        
+        call system_reset(0)
+        
+    end if
+    
+end 
+
+
+###########################################################################################################################################
+event https_button(number)
+  
+  if number = 0
+
+    call endpoint_send(0, 3, "\x05\x00\x64")    
+
+  end if
+
+  if number = 1
+  
+    call endpoint_send(0, 3, "\x05\x01\x64")    
+
+  end if
+
+  if number = 2
+  
+    call endpoint_send(0, 3, "\x05\x02\x64")    
+
+  end if
+
+  if number = 4
+  
+    call endpoint_send(0, 3, "\x05\x04\x64")    
+
+  end if
+
+  if number = 5
+  
+    call endpoint_send(0, 3, "\x05\x05\x64")    
+
+  end if
+
+  if number = 6
+  
+    call endpoint_send(0, 3, "\x05\x06\x64")    
+
+  end if
+
+  if number = 7
+  
+    call endpoint_send(0, 3, "\x05\x07\x64")    
+
+  end if
+  
+  if number = 8
+  
+    call endpoint_send(0, 3, "\x05\x08\x64")    
+
+  end if
+  
+  if number = 10
+  
+    call endpoint_send(0, 48, "\xAC\x5A\xAD\x5A\xAE\x5A\xAF\x5A\xB0\x5A\xB1\x5A\xB2\x5A\xB3\x5A\xB4\x5A\xB5\x5A\xB6\x5A\xB7\x5A\xB8\x5A\xB9\x5A\xBA\x5A\xBB\x5A\xBC\x5A\xBD\x5A\xBE\x5A\xBF\x5A\xC0\x5A\xC1\x5A\xC2\x5A\xC3\x5A")    
+
+  end if
+
+  if number = 11
+  
+    call endpoint_send(0, 24, "\x64\x7D\x66\x7F\x68\x81\x6A\x83\x6C\x85\x6E\x87\x70\x89\x72\x8B\x74\x8D\x76\x8F\x78\x91\x7A\x93")
+
+  end if
+
+  if number = 12
+  
+    call endpoint_send(0, 24, "\x7C\x65\x7E\x67\x80\x69\x82\x6B\x84\x6D\x86\x6F\x88\x71\x8A\x73\x8C\x75\x8E\x77\x90\x79\x92\x7B")
+    
+  end if
+  
+  if number = 99
+  
+    call system_reset(0)
+
+  end if
+  
+end
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

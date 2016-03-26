@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<hardware>
+
+  <!--EZ-B-->
+  <uart channel="0" baud="3333333" api="false" handshake="true" />
+
+  <!--Camera-->
+  <uart channel="1" baud="3333333" api="false" handshake="true" />
+
+  <sleep interrupts="0x1"/>
+  
+</hardware>
+
+

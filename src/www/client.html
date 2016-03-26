@@ -1,0 +1,56 @@
+<html>
+<head>
+  <title>EZ-B v4 Robot Controller</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+<body>
+  <h2>
+    Wi-Fi Client Mode Configuration
+  </h2>
+  <br />
+  <form action="/save.cgi" method="get">
+    <table>
+      <tr>
+        <td>
+          SSID:
+        </td>
+        <td>
+          <input type="text" name="25" id="s1" size="32">
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2">
+          &nbsp;
+        </td>
+      </tr>
+      <tr>
+        <td>
+          Security Key:
+        </td>
+        <td>
+          <input type="text" name="26" size="32">
+        </td>
+      </tr>
+      <tr>
+        <td colspan="2">
+          &nbsp;
+        </td>
+      </tr>
+      <tr>
+        <td></td>
+        <td>
+          <input type="submit" name="Connect" value="Connect" class="btn_body" id="b1" onclick="window.alert('Connection will be lost while I attempt to connect to the network.')">
+        </td>
+      </tr>
+    </table>
+  </form>
+  <br />
+  <br />
+  <div style="border: 1px solid #909090; background: #fefefe; margin: 10px; padding: 5px;">
+    <div style="font-weight: bold; padding-bottom: 5px;">Help</div>
+    Configure the Client Mode Settings to join your EZ-B to an existing Wi-Fi network.<br />
+    <br />
+    If you already have a Wi-Fi network, you may enter the network name and password to join the EZ-B v4 to it. This will make your EZ-B v4 a client of your existing Wi-Fi network. When you connect the EZ-B v4 to your Wi-Fi network, you may not know the IP Address that it was assigned. EZ-Builder includes an EZ-B v4 scanner which will search and find all EZ-B v4's on your network.
+  </div>
+</body>
+</html>

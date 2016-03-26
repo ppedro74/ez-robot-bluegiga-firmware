@@ -1,0 +1,64 @@
+<html>
+<head>
+  <title>EZ-B v4 Robot Controller</title>
+  <link rel="stylesheet" type="text/css" href="style.css" />
+</head>
+<body>
+  <h2>
+    The EZ-B v4 Wi-Fi Robot Controller
+  </h2>
+  <br />
+  <table>
+    <tr>
+      <td width="50%">
+        <b>Mode:</b>
+      </td>
+      <td>
+        <label id='5'>
+        </label>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <b>Channel:</b>
+      </td>
+      <td>
+        <label id='21'>
+        </label>
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <b>Security:</b>
+      </td>
+      <td>
+        <label id='24'>
+        </label>
+      </td>
+    </tr>
+  </table>
+  <br />
+  Welcome to the EZ-B v4 Embedded Web Server. This web interface allows you to configure the EZ-B v4's network settings. There are two ways to connect your device to the EZ-B v4 over Wi-Fi:<br />
+  <br />
+  <ul>
+    <li>
+      <b>1) Wi-Fi Access Point (AP) Mode:</b>
+      The EZ-B v4 becomes a Wi-Fi Server which allows your device to connect to it. This is the default setting for the EZ-B v4. In this mode, your device (<i>i.e. Computer, iPad, iPhone, etc.</i>) will connect directly to the EZ-B v4 over its Wi-Fi network. You will lose access to the internet if connected this way, unless your device has two network adapters.
+    </li>
+    <br />
+    <li>
+      <b>
+        2) Wi-Fi Client Mode:
+      </b> The EZ-B v4 will join your existing Wi-Fi network as a client. When the EZ-B v4 is connected to your Wi-Fi network, you may not know the IP Address that it is assigned. The EZ-Builder software includes a network scan tool which will find all EZ-B v4's on your network.
+    </li>
+  </ul>
+  <br />
+  <br />
+  <b>*Note:</b> To reset the EZ-B v4 to default network settings, use a paperclip to press the reset button located on the top of the EZ-B v4 while powered.<br />
+  <br />
+  <br />
+  <form action="/button.cgi" method="get">
+    <input type="submit" name="21" value="Identify" class="btn_body">
+  </form>
+</body>
+</html>
